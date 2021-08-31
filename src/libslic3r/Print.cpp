@@ -146,6 +146,8 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "inner_wall_acceleration",
         "initial_layer_acceleration",
         "top_surface_acceleration",
+        "first_layer_speed_over_raft",
+        "first_layer_acceleration_over_raft",
         "bridge_acceleration",
         "travel_acceleration",
         "sparse_infill_acceleration",

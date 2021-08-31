@@ -6222,6 +6222,8 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
 #if 0
         } else if (this->object_layer_over_raft() && m_config.first_layer_acceleration_over_raft.value > 0) {
             acceleration = m_config.first_layer_acceleration_over_raft.value;
+        } else if (this->object_layer_over_raft() && m_config.first_layer_acceleration_over_raft.value > 0) {
+            acceleration = m_config.first_layer_acceleration_over_raft.value;
 #endif
         } else if (m_config.get_abs_value("bridge_acceleration") > 0 && is_bridge(path.role())) {
             acceleration = m_config.get_abs_value("bridge_acceleration");
@@ -6369,22 +6371,26 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
             speed = is_perimeter(path.role()) ? m_config.get_abs_value("initial_layer_speed") :
                                                 m_config.get_abs_value("initial_layer_infill_speed");
         }
+        else if (this->object_layer_over_raft()){
+        speed = m_config.get_abs_value("first_layer_speed_over_raft", speed);
+        }
         else if (path.role() != erBottomSurface) {
             speed = m_config.get_abs_value("initial_layer_speed");
         }
     }
-    else if(m_config.slow_down_layers > 1){
-                // Inline calculation: check if we are past the raft + first object layer, but still within the slowdown threshold
-        if (_layer > 0 && _layer < m_config.slow_down_layers || _layer > m_config.raft_layers && (_layer == m_config.raft_layers) < m_config.slow_down_layers) {
+     else if(m_config.slow_down_layers > 1) {
+        // Inline calculation: check if we are past the raft + first object layer, but still within the slowdown threshold
+            if (_layer > 0 && _layer < m_config.slow_down_layers || _layer > m_config.raft_layers && (_layer == m_config.raft_layers) < m_config.slow_down_layers) {
             const auto first_layer_speed =
                 is_perimeter(path.role())
                     ? m_config.get_abs_value("initial_layer_speed")
                     : m_config.get_abs_value("initial_layer_infill_speed");
+                    
             if (first_layer_speed < speed) {
                 speed = std::min(
                     speed,
                     Slic3r::lerp(first_layer_speed, speed,
-                                (double) (_layer - m_config.raft_layers) / m_config.slow_down_layers));
+                                 (double) (_layer - m_config.raft_layers) / m_config.slow_down_layers));
             }
         }
     }

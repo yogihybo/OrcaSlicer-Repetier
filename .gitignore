@@ -47,3 +47,4 @@ internal_docs/
 *.flatpak
 /flatpak-repo/
 resources/profiles/OrcaSlicer_profile_validator.exe
+ada
