@@ -4710,6 +4710,34 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(INITIAL_RAFT_LAYERS));
 
+
+    def = this->add("raft_advanced_params", coBool);
+    def->label = L("Enable Advanced raft");
+    def->category = L("Support");
+    def->tooltip = L("Enable advanced raft parameters.");
+    def->set_default_value(new ConfigOptionBool(false));
+
+
+
+
+    def = this->add("raft_base_density", coFloat);
+    def->label = L("Raft base density");
+    def->category = L("Support");
+    def->tooltip = L("Raft line density in the middle layers.");
+    def->sidetext = L("NA");	// milimeters, CIS languages need translation
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.1));
+
+    def = this->add("raft_interface_density", coFloat);
+    def->label = L("Raft interface density");
+    def->category = L("Support");
+    def->tooltip = L("Raft line density in the interface layers.");
+    def->sidetext = L("NA");	// milimeters, CIS languages need translation
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.1));
+
     def = this->add("resolution", coFloat);
     def->label = L("Resolution");
     def->tooltip = L("The G-code path is generated after simplifying the contour of models to avoid too many points and G-code lines. "
