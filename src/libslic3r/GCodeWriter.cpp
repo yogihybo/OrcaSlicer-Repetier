@@ -253,7 +253,24 @@ std::string GCodeWriter::set_jerk_xy(double jerk)
             jerk = m_max_jerk_y;
         
         gcode << "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=" << jerk;
-    } else {
+        
+        } 
+    else if (FLAVOR_IS(gcfRepetier)) {
+        // Repetier uses M207 for temporary Jerk and combines X/Y into a single 'X' parameter.
+        double jerk_xy = jerk;
+        
+        // Clamp against the X machine limit
+        if (m_max_jerk_x > 0 && jerk_xy > m_max_jerk_x)
+            jerk_xy = m_max_jerk_x;
+            
+        // Clamp against the Y machine limit as well to be safe
+        if (m_max_jerk_y > 0 && jerk_xy > m_max_jerk_y)
+            jerk_xy = m_max_jerk_y;
+            
+        // Output the lowest safe limit using ONLY the X parameter
+        gcode << "M207 X" << jerk_xy;
+        } 
+    else {
         double jerk_x = jerk;
         double jerk_y = jerk;
         // Clamp the axis jerk to the allowed maximum.
@@ -263,7 +280,7 @@ std::string GCodeWriter::set_jerk_xy(double jerk)
             jerk_y = m_max_jerk_y;
         
         gcode << "M205 X" << jerk_x << " Y" << jerk_y;
-    }
+        }
       
     if (m_is_bbl_printers)
         gcode << std::setprecision(2) << " Z" << m_max_jerk_z << " E" << m_max_jerk_e;
