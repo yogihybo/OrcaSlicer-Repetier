@@ -368,6 +368,10 @@ std::string GCodeWriter::set_pressure_advance(double pa) const
             gcode << "SET_PRESSURE_ADVANCE ADVANCE=" << std::setprecision(4) << pa << "; Override pressure advance value\n";
         else if(FLAVOR_IS(gcfRepRapFirmware))
             gcode << ("M572 D0 S") << std::setprecision(4) << pa << "; Override pressure advance value\n";
+        else if (FLAVOR_IS(gcfRepetier))
+            // Repetier M233: X is quadratic (K), Y is linear (L).
+            // Applying the value to both parameters simultaneously.
+            gcode << "M233 X" << std::setprecision(4) << pa << " Y" << std::setprecision(4) << pa << " ; Override pressure advance value\n";
         else
             gcode << "M900 K" <<std::setprecision(4)<< pa << "; Override pressure advance value\n";
     }
