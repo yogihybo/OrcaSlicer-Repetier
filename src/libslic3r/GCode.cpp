@@ -6364,27 +6364,23 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
     if (speed == 0)
         speed = filament_max_volumetric_speed / _mm3_per_mm;
     const auto _layer = layer_id();
-    if (this->on_first_layer() || _layer - m_config.raft_layers == 0) {
+    if (this->on_first_layer() || m_object_layer_over_raft) {
         //BBS: for solid infill of first layer, speed can be higher as long as
         //wall lines have be attached
-        if (path.role() != erBottomSurface || m_config.raft_layers > 0 && _layer - m_config.raft_layers == 0) {
+        if (path.role() != erBottomSurface) {
             speed = is_perimeter(path.role()) ? m_config.get_abs_value("initial_layer_speed") :
                                                 m_config.get_abs_value("initial_layer_infill_speed");
         }
         else if (this->object_layer_over_raft()){
         speed = m_config.get_abs_value("first_layer_speed_over_raft", speed);
         }
-        else if (path.role() != erBottomSurface) {
-            speed = m_config.get_abs_value("initial_layer_speed");
-        }
     }
      else if(m_config.slow_down_layers > 1) {
         // Inline calculation: check if we are past the raft + first object layer, but still within the slowdown threshold
             if (_layer > 0 && _layer < m_config.slow_down_layers || _layer > m_config.raft_layers && (_layer == m_config.raft_layers) < m_config.slow_down_layers) {
-            const auto first_layer_speed =
-                is_perimeter(path.role())
-                    ? m_config.get_abs_value("initial_layer_speed")
-                    : m_config.get_abs_value("initial_layer_infill_speed");
+            const auto first_layer_speed = is_perimeter(path.role()) ? 
+                    m_config.get_abs_value("initial_layer_speed") :
+                    m_config.get_abs_value("initial_layer_infill_speed");
                     
             if (first_layer_speed < speed) {
                 speed = std::min(
