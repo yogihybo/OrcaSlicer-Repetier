@@ -247,7 +247,7 @@
         {
             "name": "fdm_repetier_common",
             "sub_path": "machine/fdm_repetier_common.json"
-        }
+        },
 		{
 			"name": "MyKlipper 0.2 nozzle",
 			"sub_path": "machine/MyKlipper 0.2 nozzle.json"
