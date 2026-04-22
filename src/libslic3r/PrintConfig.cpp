@@ -139,19 +139,19 @@ static t_config_enum_values s_keys_map_AuthorizationType {
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(AuthorizationType)
 
 static t_config_enum_values s_keys_map_GCodeFlavor {
-    { "marlin",         gcfMarlinLegacy },   
-    { "klipper",        gcfKlipper},   
-    { "reprapfirmware", gcfRepRapFirmware},
-    { "repetier",       gcfRepetier},
-    { "marlin2",        gcfMarlinFirmware}
- //   { "reprap",         gcfRepRapSprinter },
- //   { "teacup",         gcfTeacup },
- //   { "makerware",      gcfMakerWare },
- //   { "sailfish",       gcfSailfish },
- //   { "smoothie",       gcfSmoothie },
- //   { "mach3",          gcfMach3 },
- //   { "machinekit",     gcfMachinekit },
- //   { "no-extrusion",   gcfNoExtrusion }
+    { "marlin",         gcfMarlinLegacy },
+    { "klipper",        gcfKlipper },
+    { "reprapfirmware", gcfRepRapFirmware },
+    { "repetier",       gcfRepetier },
+    { "marlin2",        gcfMarlinFirmware },
+    { "reprap",         gcfRepRapSprinter },
+    { "teacup",         gcfTeacup },
+    { "makerware",      gcfMakerWare },
+    { "sailfish",       gcfSailfish },
+    { "smoothie",       gcfSmoothie },
+    { "mach3",          gcfMach3 },
+    { "machinekit",     gcfMachinekit },
+    { "no-extrusion",   gcfNoExtrusion }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(GCodeFlavor)
 
