@@ -3613,7 +3613,7 @@ void PrintConfigDef::init_fff_params()
     //def->enum_values.push_back("smoothie");
     //def->enum_values.push_back("no-extrusion");
     def->enum_labels.push_back("Marlin(legacy)");
-    def->enum_labels.push_back("Klipper");
+    def->enum_labels.push_back(L("Klipper"));
     def->enum_labels.push_back("RepRapFirmware");
     def->enum_labels.push_back("Repetier");
     def->enum_labels.push_back("Marlin 2");
