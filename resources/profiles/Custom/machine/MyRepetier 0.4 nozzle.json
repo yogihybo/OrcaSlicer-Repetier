@@ -6,7 +6,7 @@
     "setting_id": "GM001",
     "instantiation": "true",
     "printer_model": "Generic Repetier Printer",
-     "nozzle_diameter": [
+    "nozzle_diameter": [
         "0.4"
     ],
     "printer_variant": "0.4",
