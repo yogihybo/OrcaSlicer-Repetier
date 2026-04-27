@@ -268,8 +268,7 @@ std::string GCodeWriter::set_jerk_xy(double jerk)
         
         gcode << "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=" << jerk;
         
-        } 
-    else if (FLAVOR_IS(gcfRepetier)) {
+    } else if (FLAVOR_IS(gcfRepetier)) {
         // Repetier uses M207 for temporary Jerk and combines X/Y into a single 'X' parameter.
         double jerk_xy = jerk;
         
@@ -283,8 +282,7 @@ std::string GCodeWriter::set_jerk_xy(double jerk)
             
         // Output the lowest safe limit using ONLY the X parameter
         gcode << "M207 X" << jerk_xy;
-        } 
-    else {
+    } else {
         double jerk_x = jerk;
         double jerk_y = jerk;
         // Clamp the axis jerk to the allowed maximum.
@@ -294,8 +292,8 @@ std::string GCodeWriter::set_jerk_xy(double jerk)
             jerk_y = m_max_jerk_y;
         
         gcode << "M205 X" << jerk_x << " Y" << jerk_y;
-        }
-      
+    }
+    //the is_bbl check should be in the else statement above so that it doesn't inadverently added Z & E to klipper  
     if (m_is_bbl_printers)
         gcode << std::setprecision(2) << " Z" << m_max_jerk_z << " E" << m_max_jerk_e;
 

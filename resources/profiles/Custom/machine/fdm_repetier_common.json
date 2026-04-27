@@ -132,11 +132,11 @@
     "bed_exclude_area": [
         "0x0"
     ],
-    "machine_start_gcode": "M190 S[bed_temperature_initial_layer_single]\nM109 S[nozzle_temperature_initial_layer]\nPRINT_START EXTRUDER=[nozzle_temperature_initial_layer] BED=[bed_temperature_initial_layer_single]\n",
-    "machine_end_gcode": "PRINT_END",
+    "machine_start_gcode": "M190 S[bed_temperature_initial_layer_single]\nM109 S[nozzle_temperature_initial_layer]\nG28\nG92 E0\n",
+    "machine_end_gcode": "M104 S0\nM140 S0\nG92 E0\nM84\n",
     "layer_change_gcode": ";AFTER_LAYER_CHANGE\n;[layer_z]",
     "before_layer_change_gcode": ";BEFORE_LAYER_CHANGE\n;[layer_z]\nG92 E0\n",
-    "machine_pause_gcode": "PAUSE",
+    "machine_pause_gcode": "G91\nG1 Z10 F900\nG90\nG1 X0 Y0 F6000\n",
     "scan_first_layer": "0",
     "nozzle_type": "undefine",
     "auxiliary_fan": "0"

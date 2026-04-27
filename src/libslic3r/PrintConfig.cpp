@@ -139,19 +139,19 @@ static t_config_enum_values s_keys_map_AuthorizationType {
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(AuthorizationType)
 
 static t_config_enum_values s_keys_map_GCodeFlavor {
-    { "marlin",         gcfMarlinLegacy },   
-    { "klipper",        gcfKlipper},   
-    { "reprapfirmware", gcfRepRapFirmware},
-    { "repetier",       gcfRepetier},
-    { "marlin2",        gcfMarlinFirmware}
- //   { "reprap",         gcfRepRapSprinter },
- //   { "teacup",         gcfTeacup },
- //   { "makerware",      gcfMakerWare },
- //   { "sailfish",       gcfSailfish },
- //   { "smoothie",       gcfSmoothie },
- //   { "mach3",          gcfMach3 },
- //   { "machinekit",     gcfMachinekit },
- //   { "no-extrusion",   gcfNoExtrusion }
+    { "marlin",         gcfMarlinLegacy },
+    { "klipper",        gcfKlipper },
+    { "reprapfirmware", gcfRepRapFirmware },
+    { "repetier",       gcfRepetier },
+    { "marlin2",        gcfMarlinFirmware },
+    { "reprap",         gcfRepRapSprinter },
+    { "teacup",         gcfTeacup },
+    { "makerware",      gcfMakerWare },
+    { "sailfish",       gcfSailfish },
+    { "smoothie",       gcfSmoothie },
+    { "mach3",          gcfMach3 },
+    { "machinekit",     gcfMachinekit },
+    { "no-extrusion",   gcfNoExtrusion }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(GCodeFlavor)
 
@@ -3667,7 +3667,7 @@ void PrintConfigDef::init_fff_params()
     //def->enum_values.push_back("smoothie");
     //def->enum_values.push_back("no-extrusion");
     def->enum_labels.push_back("Marlin(legacy)");
-    def->enum_labels.push_back("Klipper");
+    def->enum_labels.push_back(L("Klipper"));
     def->enum_labels.push_back("RepRapFirmware");
     def->enum_labels.push_back("Repetier");
     def->enum_labels.push_back("Marlin 2");
