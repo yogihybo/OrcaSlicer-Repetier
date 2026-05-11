@@ -21,6 +21,10 @@
 			"sub_path": "machine/MyRepetier.json"
 		},
 		{
+			"name": "Generic Repetier Printer",
+			"sub_path": "machine/MyRepetier.json"
+		},
+		{
 			"name": "Generic ToolChanger Printer",
 			"sub_path": "machine/MyToolChanger.json"
 		}
