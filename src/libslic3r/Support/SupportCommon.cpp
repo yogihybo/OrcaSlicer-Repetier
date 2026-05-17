@@ -1717,7 +1717,10 @@ void generate_support_toolpaths(
                             raft_contact ?
                                 support_params.raft_interface_angle(support_layer.interface_id()) :
                                 support_interface_angle;
-                    double density = raft_contact ? support_params.raft_interface_density : interface_as_base ? support_params.support_density : support_params.interface_density;
+                     // ORCA: pick density based on interface type.
+                    double density = raft_contact ? support_params.raft_interface_density :
+                        interface_as_base ? support_params.support_density :
+                        bottom_interface ? support_params.bottom_interface_density : support_params.top_interface_density;
                     // if this layer is a raft contact layer and advanced raft parameters are enabled, use the raft interface density otherwise, use the normal interface density
                     density = config.raft_advanced_params && raft_contact ? float(config.raft_interface_density.value * 0.01) : density;
                     filler->spacing = raft_contact ? support_params.raft_interface_flow.spacing() :
