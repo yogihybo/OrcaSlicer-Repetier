@@ -135,7 +135,7 @@ PrintBase::ApplyStatus PrintObject::set_instances(PrintInstances &&instances)
     	[](const PrintInstance& lhs, const PrintInstance& rhs) { return lhs.model_instance == rhs.model_instance && lhs.shift == rhs.shift; });
     if (! equal) {
         status = PrintBase::APPLY_STATUS_CHANGED;
-        if (m_print->invalidate_steps({ psSkirtBrim, psGCodeExport }) ||
+        if (m_print->invalidate_steps({ psMergeRaft, psSkirtBrim, psGCodeExport }) ||
             (! equal_length && m_print->invalidate_step(psWipeTower)))
             status = PrintBase::APPLY_STATUS_INVALIDATED;
         m_instances = std::move(instances);
@@ -1449,7 +1449,7 @@ bool PrintObject::invalidate_step(PrintObjectStep step)
         m_slicing_params.valid = false;
     } else if (step == posSupportMaterial) {
         invalidated |= this->invalidate_steps({ posSimplifySupportPath });
-        invalidated |= m_print->invalidate_steps({ psSkirtBrim });
+        invalidated |= m_print->invalidate_steps({ psMergeRaft, psSkirtBrim });
         m_slicing_params.valid = false;
     }
 

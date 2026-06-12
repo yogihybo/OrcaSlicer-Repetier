@@ -19,6 +19,7 @@
 #include "MaterialType.hpp"
 #include "Model.hpp"
 #include "format.hpp"
+#include "Support/SupportCommon.hpp"
 #include <float.h>
 
 #include <algorithm>
@@ -2353,6 +2354,10 @@ void Print::process(long long *time_cost_with_cache, bool use_cache)
     }
 
 
+    if (this->set_started(psMergeRaft)) {
+        this->make_merged_rafts();
+        this->set_done(psMergeRaft);
+    }
 
     if (this->set_started(psWipeTower)) {
         {
@@ -5045,6 +5050,122 @@ void WipeTowerData::construct_mesh(float width, float depth, float height, float
     }
     //wipe_tower_mesh_data->real_wipe_tower_mesh.write_ascii("../wipe_tower_mesh.obj");
    //wipe_tower_mesh_data->real_brim_mesh.write_ascii("../wipe_tower_brim_mesh.obj");
+}
+
+void Print::make_merged_rafts()
+{
+    // Clear previous merged rafts
+    m_merged_raft_layers.clear();
+    
+    // Clean up m_global_raft_polygons to keep only those belonging to current active objects
+    {
+        std::lock_guard<std::mutex> lock(m_global_raft_mutex);
+        std::set<const PrintObject*> active_objects(m_objects.begin(), m_objects.end());
+        for (auto& [z, layers] : m_global_raft_polygons) {
+            layers.erase(
+                std::remove_if(layers.begin(), layers.end(), 
+                    [&active_objects](const RaftPolygon& rp) { 
+                        return active_objects.find(rp.object) == active_objects.end(); 
+                    }),
+                layers.end()
+            );
+        }
+        
+        // Remove empty keys from the map
+        for (auto it = m_global_raft_polygons.begin(); it != m_global_raft_polygons.end(); ) {
+            if (it->second.empty()) {
+                it = m_global_raft_polygons.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    
+    if (m_global_raft_polygons.empty())
+        return;
+        
+    // Merge polygons for each layer height and create a new unified layer
+    size_t id = 0;
+    
+    SupportLayerPtrs support_layers;
+    SupportGeneratorLayersPtr raft_layers;
+    SupportGeneratorLayersPtr interface_layers;
+    SupportGeneratorLayersPtr top_contacts;
+    SupportGeneratorLayersPtr empty_layers;
+    std::vector<std::unique_ptr<SupportGeneratorLayer>> gen_layers;
+    
+    for (const auto& [z, layers] : m_global_raft_polygons) {
+        if (layers.empty()) continue;
+        
+        // Take parameters from the first layer
+        const RaftPolygon& first = layers.front();
+        std::unique_ptr<SupportLayer> merged = std::make_unique<SupportLayer>(
+            id++, 0, m_objects.front(), first.height, z, z - first.height);
+            
+        Polygons all_polygons;
+        Polygons all_contact_polygons;
+        for (const RaftPolygon &layer : layers) {
+            for (const PrintObject *obj : m_objects) {
+                if (obj == layer.object || obj->get_shared_object() == layer.object) {
+                    for (const PrintInstance& instance : obj->instances()) {
+                        Polygons shifted = layer.polygons;
+                        for (Polygon& poly : shifted) poly.translate(instance.shift);
+                        polygons_append(all_polygons, shifted);
+                        
+                        if (!layer.contact_polygons.empty()) {
+                            Polygons shifted_contact = layer.contact_polygons;
+                            for (Polygon& poly : shifted_contact) poly.translate(instance.shift);
+                            polygons_append(all_contact_polygons, shifted_contact);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Use Clipper2 (via ClipperUtils or union_) to merge the polygons
+        Polygons merged_polygons = all_polygons.empty() ? Polygons() : union_(all_polygons);
+        Polygons merged_contact_polygons = all_contact_polygons.empty() ? Polygons() : union_(all_contact_polygons);
+        
+        auto gen = std::make_unique<SupportGeneratorLayer>();
+        gen->layer_type = (SupporLayerType)first.layer_type;
+        gen->polygons = merged_polygons;
+        if (!merged_contact_polygons.empty()) {
+            gen->contact_polygons = std::make_unique<Polygons>(merged_contact_polygons);
+        }
+        gen->print_z = z;
+        gen->bottom_z = z - first.height;
+        gen->height = first.height;
+        
+        if (gen->layer_type == SupporLayerType::TopContact) {
+            top_contacts.push_back(gen.get());
+        } else if (gen->layer_type == SupporLayerType::RaftInterface) {
+            interface_layers.push_back(gen.get());
+        } else {
+            raft_layers.push_back(gen.get());
+        }
+        
+        gen_layers.push_back(std::move(gen));
+        
+        support_layers.push_back(merged.get());
+        m_merged_raft_layers.push_back(std::move(merged));
+    }
+    
+    if (!support_layers.empty()) {
+        PrintObject *first_obj = m_objects.front();
+        SupportParameters support_params(*first_obj);
+        generate_support_toolpaths(
+            support_layers,
+            first_obj->config(),
+            support_params,
+            first_obj->slicing_parameters(),
+            raft_layers,
+            empty_layers, // bottom_contacts
+            top_contacts, // top_contacts
+            empty_layers, // intermediate_layers
+            interface_layers, // interface_layers
+            empty_layers  // base_interface_layers
+        );
+    }
 }
 
 } // namespace Slic3r

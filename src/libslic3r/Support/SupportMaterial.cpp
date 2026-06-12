@@ -551,8 +551,57 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
     }
 #endif /* SLIC3R_DEBUG */
 
+    // Save raft layers into Print's global map for merging
+    {
+        std::lock_guard<std::mutex> lock(object.print()->m_global_raft_mutex);
+        
+        // Remove previous raft polygons for this object to avoid duplication upon re-slicing
+        for (auto& [z, layers] : object.print()->m_global_raft_polygons) {
+            layers.erase(
+                std::remove_if(layers.begin(), layers.end(), 
+                    [&object](const Print::RaftPolygon& rp) { return rp.object == &object; }),
+                layers.end()
+            );
+        }
+        
+        // Remove empty keys from the map
+        for (auto it = object.print()->m_global_raft_polygons.begin(); it != object.print()->m_global_raft_polygons.end(); ) {
+            if (it->second.empty()) {
+                it = object.print()->m_global_raft_polygons.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        if (m_slicing_params.raft_layers() > 0) {
+            auto add_raft_layer = [&](SupportGeneratorLayer* l, Slic3r::SupporLayerType type) {
+                if (l->print_z > m_slicing_params.raft_contact_top_z + EPSILON) return;
+                Print::RaftPolygon rp;
+                rp.polygons = l->polygons;
+                if (l->contact_polygons) {
+                    rp.contact_polygons = *l->contact_polygons;
+                }
+                rp.layer_type = (int)type;
+                rp.height = l->height;
+                rp.object = &object;
+                object.print()->m_global_raft_polygons[l->print_z].push_back(rp);
+                
+                // Clear polygons so they aren't generated per-object
+                l->polygons.clear();
+                if (l->contact_polygons) l->contact_polygons->clear();
+            };
+
+            for (SupportGeneratorLayer* l : raft_layers) add_raft_layer(l, l->layer_type);
+            for (SupportGeneratorLayer* l : interface_layers) add_raft_layer(l, Slic3r::SupporLayerType::RaftInterface);
+            for (SupportGeneratorLayer* l : top_contacts) add_raft_layer(l, Slic3r::SupporLayerType::TopContact);
+        }
+    }
+
+    // Clear raft_layers to skip per-object raft toolpath generation.
+    // They will be handled and merged at the Print level.
+    SupportGeneratorLayersPtr empty_raft_layers;
     // Generate the actual toolpaths and save them into each layer.
-    generate_support_toolpaths(object.support_layers(), *m_object_config, m_support_params, m_slicing_params, raft_layers, bottom_contacts, top_contacts, intermediate_layers, interface_layers, base_interface_layers);
+    generate_support_toolpaths(object.support_layers(), *m_object_config, m_support_params, m_slicing_params, empty_raft_layers, bottom_contacts, top_contacts, intermediate_layers, interface_layers, base_interface_layers);
 
 #ifdef SLIC3R_DEBUG
     {

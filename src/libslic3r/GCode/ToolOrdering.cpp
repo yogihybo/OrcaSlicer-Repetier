@@ -465,6 +465,43 @@ ToolOrdering::ToolOrdering(const Print &print, unsigned int first_extruder, bool
     for (auto object : print.objects())
         this->collect_extruders(*object, per_layer_extruder_switches);
 
+    // Collect extruders required for the merged raft layers.
+    if (!print.m_merged_raft_layers.empty() && !print.objects().empty()) {
+        const PrintObject &first_object = *print.objects().front();
+        for (const auto& support_layer : print.m_merged_raft_layers) {
+            LayerTools   &layer_tools   = this->tools_for_layer(support_layer->print_z);
+            ExtrusionRole role          = support_layer->support_fills.role();
+            bool          has_support   = false;
+            bool          has_interface = false;
+            for (const ExtrusionEntity *ee : support_layer->support_fills.entities) {
+                ExtrusionRole er = ee->role();
+                if (er == erSupportMaterial || er == erSupportTransition) has_support = true;
+                if (er == erSupportMaterialInterface) has_interface = true;
+                if (has_support && has_interface) break;
+            }
+            unsigned int extruder_support   = first_object.config().support_filament.value;
+            unsigned int extruder_interface = first_object.config().support_interface_filament.value;
+            if (has_support) {
+                if (extruder_support > 0 || !has_interface || extruder_interface == 0 || layer_tools.has_object)
+                    layer_tools.extruders.push_back(extruder_support);
+                else {
+                    layer_tools.extruders.push_back(extruder_interface);
+                }
+            }
+            if (has_interface) layer_tools.extruders.push_back(extruder_interface);
+            if (has_support || has_interface) {
+                layer_tools.has_support = true;
+                layer_tools.wiping_extrusions().is_support_overriddable_and_mark(role, first_object);
+            }
+        }
+    }
+
+    for (auto& layer : m_layer_tools) {
+        sort_remove_duplicates(layer.extruders);
+        if (layer.extruders.empty() && layer.has_object)
+            layer.extruders.emplace_back(0); 
+    }
+
     // Reorder the extruders to minimize tool switches.
     std::vector<unsigned int> first_layer_tool_order;
     if (first_extruder == (unsigned int)-1) {

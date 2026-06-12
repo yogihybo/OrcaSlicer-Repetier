@@ -1437,6 +1437,7 @@ void generate_support_toolpaths(
 
     // Insert the raft base layers.
     auto n_raft_layers = std::min<size_t>(support_layers.size(), std::max(0, int(slicing_params.raft_layers()) - 1));
+    n_raft_layers = std::min(n_raft_layers, raft_layers.size());
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0, n_raft_layers),
         [&support_layers, &raft_layers, &intermediate_layers, &config, &support_params, &slicing_params,

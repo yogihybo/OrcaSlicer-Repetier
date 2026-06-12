@@ -1773,7 +1773,10 @@ std::vector<GCode::LayerToPrint> GCode::collect_layers_to_print(const PrintObjec
         // Check that there are extrusions on the very first layer. The case with empty
         // first layer may result in skirt/brim in the air and maybe other issues.
         if (layers_to_print.size() == 1u) {
-            if (!has_extrusions)
+            bool has_global_raft = !object.print()->m_merged_raft_layers.empty() && 
+                                   layer_to_print.support_layer && 
+                                   layer_to_print.support_layer->id() < object.slicing_parameters().raft_layers();
+            if (!has_extrusions && !has_global_raft)
                 throw Slic3r::SlicingError(_(L("One object has an empty first layer and can't be printed. Please Cut the bottom or enable supports.")), object.id().id);
         }
 
@@ -1807,8 +1810,11 @@ std::vector<GCode::LayerToPrint> GCode::collect_layers_to_print(const PrintObjec
             if (has_extrusions && layer_to_print.print_z() > maximal_print_z + 2. * EPSILON)
                 warning_ranges.emplace_back(std::make_pair((last_extrusion_layer ? last_extrusion_layer->print_z() : 0.), layers_to_print.back().print_z()));
         }
-        // Remember last layer with extrusions.
-        if (has_extrusions)
+        // Remember last layer with extrusions, or global raft layers which handle their own extrusions globally.
+        bool is_global_raft = !object.print()->m_merged_raft_layers.empty() && 
+                              layer_to_print.support_layer && 
+                              layer_to_print.support_layer->id() < object.slicing_parameters().raft_layers();
+        if (has_extrusions || is_global_raft)
             last_extrusion_layer = &layers_to_print.back();
     }
 
@@ -5239,9 +5245,38 @@ LayerResult GCode::process_layer(
 
                 if (layer.id() == 1 && m_skirt_done.size() > 1)
                     m_skirt_done.erase(m_skirt_done.begin()+1,m_skirt_done.end());
-
                 const Point& offset = instance_to_print.print_object.instances()[instance_to_print.instance_id].shift;
                 gcode += generate_skirt(print, instance_to_print.print_object.object_skirt(), offset, instance_to_print.print_object.config().skirt_start_angle, layer_tools, layer, extruder_id);
+            }
+        }
+
+        // Orca: Print merged raft layers
+        if (!print.m_merged_raft_layers.empty() && !print.objects().empty()) {
+            const PrintObject &first_object = *print.objects().front();
+            for (const auto& raft_layer : print.m_merged_raft_layers) {
+                if (std::abs(raft_layer->print_z - print_z) < EPSILON) {
+                    this->set_origin(0., 0.); // raft is in absolute plate coordinates
+                    
+                    m_config.apply(print.default_region_config());
+                    m_config.apply(first_object.config(), true);
+                    
+                    unsigned int base_extruder = first_object.config().support_filament.value;
+                    if (base_extruder == extruder_id || (base_extruder == 0 && extruder_id == layer_tools.extruders.front())) {
+                        m_avoid_crossing_perimeters.use_external_mp();
+                        gcode += this->extrude_support(raft_layer->support_fills, erSupportMaterial);
+                        gcode += this->extrude_support(raft_layer->support_fills, erSupportTransition);
+                        m_avoid_crossing_perimeters.use_external_mp(false);
+                        m_avoid_crossing_perimeters.disable_once();
+                    }
+                    
+                    unsigned int intf_extruder = first_object.config().support_interface_filament.value;
+                    if (intf_extruder == extruder_id || (intf_extruder == 0 && extruder_id == layer_tools.extruders.front())) {
+                        m_avoid_crossing_perimeters.use_external_mp();
+                        gcode += this->extrude_support(raft_layer->support_fills, erSupportMaterialInterface);
+                        m_avoid_crossing_perimeters.use_external_mp(false);
+                        m_avoid_crossing_perimeters.disable_once();
+                    }
+                }
             }
         }
 

@@ -46,3 +46,7 @@ test.js
 internal_docs/
 *.flatpak
 /flatpak-repo/
+.git/
+.antigravity/
+node_modules/
+dist/

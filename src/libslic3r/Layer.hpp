@@ -303,11 +303,14 @@ protected:
     friend class PrintObject;
     friend class TreeSupport;
 
+public:
     // The constructor has been made public to be able to insert additional support layers for the skirt or a wipe tower
     // between the raft and the object first layer.
     SupportLayer(size_t id, size_t interface_id, PrintObject *object, coordf_t height, coordf_t print_z, coordf_t slice_z) :
         Layer(id, object, height, print_z, slice_z), m_interface_id(interface_id), support_type(stInnerNormal) {}
     virtual ~SupportLayer() = default;
+
+protected:
 
     size_t m_interface_id;
 
